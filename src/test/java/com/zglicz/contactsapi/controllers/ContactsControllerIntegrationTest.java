@@ -68,7 +68,9 @@ public class ContactsControllerIntegrationTest {
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andExpect(jsonPath("$.length()", is(2)))
 				.andExpect(jsonPath("$[0].email", is(DEFAULT_EMAIL)))
-				.andExpect(jsonPath("$[1].email", is(otherEmail)));
+				.andExpect(jsonPath("$[0].id", is(contact1.getId().intValue())))
+				.andExpect(jsonPath("$[1].email", is(otherEmail)))
+				.andExpect(jsonPath("$[1].id", is(contact2.getId().intValue())));
 	}
 
 	@Test

@@ -1,10 +1,11 @@
 package com.zglicz.contactsapi.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.validation.constraints.*;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import java.util.Set;
 
 @Entity
 public class Contact {
@@ -36,6 +37,9 @@ public class Contact {
     @Email(message = EMAIL_INVALID_ERROR)
     @Column(unique=true)
     private String email;
+
+    @OneToMany(mappedBy = "contact")
+    private Set<ContactSkill> skills;
 
     public void setId(Long id) {
         this.id = id;

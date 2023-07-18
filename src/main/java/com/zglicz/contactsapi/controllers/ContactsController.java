@@ -1,13 +1,21 @@
 package com.zglicz.contactsapi.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.entities.Contact;
+import com.zglicz.contactsapi.entities.ContactSkill;
+import com.zglicz.contactsapi.misc.UniqueSkillsConstraint;
+import com.zglicz.contactsapi.repositories.ContactSkillsRepository;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,16 +23,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Validated
 @RestController
 @RequestMapping("/contacts")
 public class ContactsController {
-    public final static String CONTACT_DELETED_SUCCESS = "Contact deleted";
-
-    private final ContactsRepository contactsRepository;
+    Logger logger = LoggerFactory.getLogger(ContactsController.class);
 
     @Autowired
-    public ContactsController(ContactsRepository contactsRepository) {
+    private ObjectMapper objectMapper;
+
+    public final static String CONTACT_DELETED_SUCCESS = "Contact deleted";
+    public final static String SKILLS_UPDATED_SUCCESS = "Skills saved successfully";
+    public final static String DUPLICATE_SKILLS_ERROR = "Duplicate skills provided for a single contact";
+
+    private final ContactsRepository contactsRepository;
+    private final ContactSkillsRepository contactSkillsRepository;
+
+    @Autowired
+    public ContactsController(ContactsRepository contactsRepository, ContactSkillsRepository contactSkillsRepository) {
         this.contactsRepository = contactsRepository;
+        this.contactSkillsRepository = contactSkillsRepository;
     }
 
     @GetMapping("/")
@@ -36,6 +54,31 @@ public class ContactsController {
     public ResponseEntity<Contact> getContact(@PathVariable final Long id) {
         return contactsRepository.findById(id)
                 .map(contact -> new ResponseEntity<>(contact, HttpStatus.OK))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/skills")
+    public ResponseEntity<List<ContactSkill>> getContactSkills(@PathVariable final Long id) {
+        return contactsRepository.findById(id)
+                .map(contact -> new ResponseEntity<>(contactSkillsRepository.findByContactId(id), HttpStatus.OK))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/skills")
+    public ResponseEntity<String> updateContactSkills(
+            @PathVariable final Long id, @Valid @RequestBody @UniqueSkillsConstraint List<ContactSkill> skills) {
+        return contactsRepository.findById(id)
+                .map(contact -> {
+                    try {
+                        skills.stream().forEach(skill -> skill.setContact(contact));
+                        contactSkillsRepository.deleteAll();
+                        logger.info(objectMapper.writeValueAsString(skills));
+                        contactSkillsRepository.saveAll(skills);
+                    } catch (Exception e) {
+
+                    }
+                    return ResponseEntity.ok(SKILLS_UPDATED_SUCCESS);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -62,6 +105,12 @@ public class ContactsController {
     ResponseEntity<Contact> addContact(@Valid @RequestBody Contact contact) {
         Contact savedContact = contactsRepository.save(contact);
         return ResponseEntity.ok(savedContact);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(ConstraintViolationException.class)
+    public String handleValidationExceptions(ConstraintViolationException ex) {
+        return ContactsController.DUPLICATE_SKILLS_ERROR;
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
