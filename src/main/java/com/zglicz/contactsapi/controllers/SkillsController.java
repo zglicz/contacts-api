@@ -2,6 +2,7 @@ package com.zglicz.contactsapi.controllers;
 
 import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,11 +22,13 @@ public class SkillsController {
 		this.skillsRepository = skillsRepository;
 	}
 
+	@Operation(summary = "Load the list of all skills")
 	@GetMapping("/")
 	public ResponseEntity<List<Skill>> getAllSkills() {
 		return ResponseEntity.ok((List<Skill>) skillsRepository.findAll());
 	}
 
+	@Operation(summary = "Create a new skill")
 	@PostMapping("/")
 	public ResponseEntity<Skill> addSkill(@Valid @RequestBody Skill skill) {
 		Skill savedSkill = skillsRepository.save(skill);

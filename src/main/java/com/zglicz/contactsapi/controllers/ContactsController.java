@@ -6,6 +6,13 @@ import com.zglicz.contactsapi.entities.ContactSkill;
 import com.zglicz.contactsapi.misc.UniqueSkillsConstraint;
 import com.zglicz.contactsapi.repositories.ContactSkillsRepository;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -26,6 +33,7 @@ import java.util.Map;
 @Validated
 @RestController
 @RequestMapping("/contacts")
+@Tag(name = "Contacts", description = "Contacts management main endpoint")
 public class ContactsController {
     Logger logger = LoggerFactory.getLogger(ContactsController.class);
 
@@ -45,11 +53,17 @@ public class ContactsController {
         this.contactSkillsRepository = contactSkillsRepository;
     }
 
+    @Operation(summary = "Get a list of all contacts")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully loaded all contacts",
+                    content = { @Content(mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = Contact.class))) })})
     @GetMapping("/")
     public ResponseEntity<List<Contact>> getContacts() {
         return ResponseEntity.ok((List<Contact>) contactsRepository.findAll());
     }
 
+    @Operation(summary = "Get a single contact by id")
     @GetMapping("/{id}")
     public ResponseEntity<Contact> getContact(@PathVariable final Long id) {
         return contactsRepository.findById(id)
@@ -57,6 +71,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Get a list of all skills for a contact id")
     @GetMapping("/{id}/skills")
     public ResponseEntity<List<ContactSkill>> getContactSkills(@PathVariable final Long id) {
         return contactsRepository.findById(id)
@@ -64,6 +79,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Update the list of skills for a contact id")
     @PostMapping("/{id}/skills")
     public ResponseEntity<String> updateContactSkills(
             @PathVariable final Long id, @Valid @RequestBody @UniqueSkillsConstraint List<ContactSkill> skills) {
@@ -82,6 +98,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Delete a contact by id")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteContact(@PathVariable final Long id) {
         return contactsRepository.findById(id)
@@ -92,6 +109,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Update a contact by id")
     @PutMapping("/{id}")
     public ResponseEntity<Contact> updateContact(
             @PathVariable final Long id, @Valid @RequestBody Contact updatedContact) {
@@ -101,6 +119,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Create a new contact")
     @PostMapping("/")
     ResponseEntity<Contact> addContact(@Valid @RequestBody Contact contact) {
         Contact savedContact = contactsRepository.save(contact);

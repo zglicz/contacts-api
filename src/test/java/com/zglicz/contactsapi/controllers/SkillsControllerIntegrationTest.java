@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
 import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @AutoConfigureTestDatabase
 public class SkillsControllerIntegrationTest {
-	public static final String DEFAULT_SKILL_NAME = "C++";
+	public static final String DEFAULT_SKILL_NAME = "Ruby";
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -35,7 +35,7 @@ public class SkillsControllerIntegrationTest {
 	@Autowired
 	private SkillsRepository skillsRepository;
 
-	@AfterEach
+	@BeforeEach
 	public void resetDb() { skillsRepository.deleteAll(); }
 
 	@Test
@@ -43,7 +43,7 @@ public class SkillsControllerIntegrationTest {
 		Skill skill = getValidSkill();
 		mvc.perform(post("/skills/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(skill)));
 		List<Skill> skills = (List<Skill>) skillsRepository.findAll();
-		Assertions.assertTrue(skills.size() == 1);
+		Assertions.assertEquals(1, skills.size());
 		Skill savedSkill = skills.get(0);
 		Assertions.assertEquals(skill.getName(), savedSkill.getName());
 	}
@@ -58,8 +58,8 @@ public class SkillsControllerIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andExpect(jsonPath("$.length()", is(2)))
-				.andExpect(jsonPath("$[0].name", is(DEFAULT_SKILL_NAME)))
-				.andExpect(jsonPath("$[1].name", is(otherSkillName)));;
+				.andExpect(jsonPath("$[0].name", is(otherSkillName)))
+				.andExpect(jsonPath("$[1].name", is(DEFAULT_SKILL_NAME)));;
 	}
 
 	@Test
