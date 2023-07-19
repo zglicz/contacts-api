@@ -22,6 +22,7 @@ class ContactTests {
         contact.setFirstname("Bob");
         contact.setLastname("Ross");
         contact.setEmail("example@email.com");
+        contact.setPassword("password");
 
         Set<ConstraintViolation<Contact>> violations = validator.validate(contact);
         assertTrue(violations.isEmpty());
@@ -32,6 +33,7 @@ class ContactTests {
         contact.setFirstname("Bob");
         contact.setLastname("Ross");
         contact.setEmail("bad-email");
+        contact.setPassword("goodPassword");
 
         Set<ConstraintViolation<Contact>> violations = validator.validate(contact);
         assertFalse(violations.isEmpty());

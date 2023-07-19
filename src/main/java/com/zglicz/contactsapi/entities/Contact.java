@@ -1,31 +1,35 @@
 package com.zglicz.contactsapi.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
 import java.util.Set;
 
 @Entity
-public class Contact {
-    public final static String FIRSTNAME_REQUIRED_ERROR = "Firstname is required";
-    public final static String LASTNAME_REQUIRED_ERROR = "Lasttname is required";
+public class Contact implements UserDetails {
     public final static String EMAIL_NOT_BLANK_ERROR = "Email must not be empty";
     public final static String EMAIL_INVALID_ERROR = "Invalid email address";
     public final static String EMAIL_DUPLICATE_ERROR = "Email already exists";
-    public final static String UNKNOWN_ERROR = "Unknown error occured";
+    public final static String UNKNOWN_ERROR = "Unknown error occurred";
+    public final static String FIRSTNAME_LENGTH_ERROR = "Invalid length of firstname";
+    public final static String LASTNAME_LENGTH_ERROR = "Invalid length of lastname";
+    public final static String PASSWORD_NOT_EMPTY_ERROR = "Password cannot be empty";
 
     @Id
     @GeneratedValue
     private Long id;
 
-    @NotBlank(message = FIRSTNAME_REQUIRED_ERROR)
-    @Size(min = 2, max = 50)
+    @Size(min = 2, max = 50, message = FIRSTNAME_LENGTH_ERROR)
     private String firstname;
 
-    @NotBlank(message = LASTNAME_REQUIRED_ERROR)
-    @Size(min = 2, max = 50)
+    @Size(min = 2, max = 50, message = LASTNAME_LENGTH_ERROR)
     private String lastname;
 
     private String address;
@@ -37,6 +41,43 @@ public class Contact {
     @Email(message = EMAIL_INVALID_ERROR)
     @Column(unique=true)
     private String email;
+
+    @NotBlank(message = PASSWORD_NOT_EMPTY_ERROR)
+    private String password;
+
+    @JsonIgnore
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Set.of(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 
     @OneToMany(mappedBy = "contact")
     private Set<ContactSkill> skills;
@@ -87,5 +128,16 @@ public class Contact {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @JsonIgnore
+    @Override
+    public String getUsername() {
+        return getEmail();
     }
 }

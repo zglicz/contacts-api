@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
+import com.zglicz.contactsapi.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -30,8 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @AutoConfigureTestDatabase
 public class ContactsControllerIntegrationTest {
-	public static final String DEFAULT_FIRSTNAME = "Bob";
-	public static final String DEFAULT_EMAIL = "bob@example.com";
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -47,7 +47,7 @@ public class ContactsControllerIntegrationTest {
 
 	@Test
 	public void testCreateContact() throws Exception {
-		Contact contact = getValidContact();
+		Contact contact = TestUtils.getValidContact();
 		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact)));
 		List<Contact> contacts = (List<Contact>) contactsRepository.findAll();
 		Assertions.assertTrue(contacts.size() == 1);
@@ -59,7 +59,7 @@ public class ContactsControllerIntegrationTest {
 	@Test
 	public void testGetAllContacts() throws Exception {
 		String otherEmail = "otherBob@example.com";
-		Contact contact1 = createAndSaveContact(DEFAULT_EMAIL);
+		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
 		Contact contact2 = createAndSaveContact(otherEmail);
 		List<Contact> contacts = (List<Contact>) contactsRepository.findAll();
 		List<String> expectedNames = contacts.stream().map(Contact::getFirstname).collect(Collectors.toList());
@@ -67,7 +67,7 @@ public class ContactsControllerIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andExpect(jsonPath("$.length()", is(2)))
-				.andExpect(jsonPath("$[0].email", is(DEFAULT_EMAIL)))
+				.andExpect(jsonPath("$[0].email", is(TestUtils.DEFAULT_EMAIL)))
 				.andExpect(jsonPath("$[0].id", is(contact1.getId().intValue())))
 				.andExpect(jsonPath("$[1].email", is(otherEmail)))
 				.andExpect(jsonPath("$[1].id", is(contact2.getId().intValue())));
@@ -75,20 +75,24 @@ public class ContactsControllerIntegrationTest {
 
 	@Test
 	public void testGetSingleContact() throws Exception {
-		Contact contact = createAndSaveContact(DEFAULT_EMAIL);
+		Contact contact = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
 		mvc.perform(get("/contacts/" + contact.getId().toString()))
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-				.andExpect(jsonPath("$['firstname']", is(DEFAULT_FIRSTNAME)))
+				.andExpect(jsonPath("$['firstname']", is(TestUtils.DEFAULT_FIRSTNAME)))
 				.andExpect(jsonPath("$['id']", is(contact.getId().intValue())));
 	}
 
 	@Test
 	public void testUpdateUser() throws Exception {
-		Contact contact = createAndSaveContact(DEFAULT_EMAIL);
+		Contact contact = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
 		String updatedFirstname = "Bobby";
 		contact.setFirstname(updatedFirstname);
-		mvc.perform(put("/contacts/" + contact.getId().toString()).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact)))
+		mvc.perform(
+					put("/contacts/" + contact.getId().toString())
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(objectMapper.writeValueAsString(contact))
+							.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andExpect(jsonPath("$['firstname']", is(updatedFirstname)))
@@ -97,53 +101,51 @@ public class ContactsControllerIntegrationTest {
 
 	@Test
 	public void testDeleteUser() throws Exception {
-		Contact contact = createAndSaveContact(DEFAULT_EMAIL);
-		mvc.perform(delete("/contacts/" + contact.getId().toString()))
+		Contact contact = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
+		mvc.perform(delete("/contacts/" + contact.getId().toString()).with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString(ContactsController.CONTACT_DELETED_SUCCESS)));
 		Assertions.assertEquals(0, contactsRepository.count());
 	}
 
 	@Test
+	public void testCannotDeleteUserUnauthenticated() throws Exception {
+		Contact contact = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
+		mvc.perform(delete("/contacts/" + contact.getId().toString()))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
 	public void testInvalidFieldsErrors() throws Exception {
 		Contact contact = new Contact();
 		contact.setEmail("invalid.email");
+		contact.setFirstname("A");
+		contact.setLastname(new String(new char[60]).replace('\0', ' '));
 
 		MvcResult mvcResult = mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact)))
 				.andExpect(status().isBadRequest())
 				.andReturn();
 		Map<String, String> expectedErrors = new HashMap<>() {{
-			put("firstname", Contact.FIRSTNAME_REQUIRED_ERROR);
-			put("lastname", Contact.LASTNAME_REQUIRED_ERROR);
+			put("firstname", Contact.FIRSTNAME_LENGTH_ERROR);
+			put("password", Contact.PASSWORD_NOT_EMPTY_ERROR);
 			put("email", Contact.EMAIL_INVALID_ERROR);
+			put("lastname", Contact.LASTNAME_LENGTH_ERROR);
 		}};
-		Assertions.assertEquals(
-				objectMapper.writeValueAsString(expectedErrors), mvcResult.getResponse().getContentAsString());
+		HashMap<String, String> actualErrors = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), HashMap.class);
+		Assertions.assertEquals(expectedErrors, actualErrors);
 	}
 
 	@Test
 	public void testUniqueEmailConstraint() throws Exception {
-		Contact contact1 = createAndSaveContact(DEFAULT_EMAIL);
-		Contact contact2 = getValidContact(DEFAULT_EMAIL);
+		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
+		Contact contact2 = TestUtils.getValidContact(TestUtils.DEFAULT_EMAIL);
 		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact2)))
 				.andExpect(status().isBadRequest())
 				.andExpect(content().string(containsString(Contact.EMAIL_DUPLICATE_ERROR)));
 	}
 
 	private Contact createAndSaveContact(String email) {
-		Contact contact = getValidContact(email);
+		Contact contact = TestUtils.getValidContact(email);
 		return contactsRepository.save(contact);
-	}
-
-	private Contact getValidContact() {
-		return getValidContact(DEFAULT_EMAIL);
-	}
-
-	private Contact getValidContact(String email) {
-		Contact contact = new Contact();
-		contact.setFirstname(DEFAULT_FIRSTNAME);
-		contact.setLastname("Ross");
-		contact.setEmail(email);
-		return contact;
 	}
 }

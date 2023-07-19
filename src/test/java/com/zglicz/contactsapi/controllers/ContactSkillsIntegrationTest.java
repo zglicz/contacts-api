@@ -9,6 +9,7 @@ import com.zglicz.contactsapi.misc.SkillLevel;
 import com.zglicz.contactsapi.repositories.ContactSkillsRepository;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
+import com.zglicz.contactsapi.utils.TestUtils;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -18,14 +19,19 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = ContactsApiApplication.class)
 @AutoConfigureMockMvc
@@ -86,7 +92,7 @@ public class ContactSkillsIntegrationTest {
 				Arrays.asList(new ContactSkill(SkillLevel.EXPERT, skill1, contact), new ContactSkill(SkillLevel.INTERMEDIATE, skill2, contact)));
 		List<ContactSkill> newSkills =
 				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2));
-		mvc.perform(post("/contacts/" + contact.getId().toString() + "/skills").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(newSkills)))
+		mvc.perform(post("/contacts/" + contact.getId().toString() + "/skills").with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(newSkills)))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString(ContactsController.SKILLS_UPDATED_SUCCESS)));
 		List<ContactSkill> resultSkills = contactSkillsRepository.findByContactId(contact.getId());
@@ -98,17 +104,17 @@ public class ContactSkillsIntegrationTest {
 	@Test
 	public void testDontAllowMultipleContactSkillsWithSameSkill() throws Exception {
 		List<ContactSkill> contactSkills = Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1), new ContactSkill(SkillLevel.BEGINNER, skill1));
-		MvcResult mvcResult = mvc.perform(post("/contacts/" + contact.getId() + "/skills").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contactSkills)))
-				.andExpect(status().isBadRequest())
-				.andReturn();
+		MvcResult mvcResult = mvc.perform(
+				post("/contacts/" + contact.getId() + "/skills")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(contactSkills))
+						.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
+				.andExpect(status().isBadRequest()).andReturn();
 		Assertions.assertEquals(ContactsController.DUPLICATE_SKILLS_ERROR, mvcResult.getResponse().getContentAsString());
 	}
 
 	private Contact createNewContact() {
-		Contact contact = new Contact();
-		contact.setFirstname("Bob");
-		contact.setLastname("Ross");
-		contact.setEmail("bob@example.com");
+		Contact contact = TestUtils.getValidContact();
 		return contactsRepository.save(contact);
 	}
 

@@ -2,11 +2,12 @@ package com.zglicz.contactsapi.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
+import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.Skill;
+import com.zglicz.contactsapi.repositories.ContactsRepository;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.zglicz.contactsapi.utils.TestUtils;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = ContactsApiApplication.class)
 @AutoConfigureMockMvc
 @AutoConfigureTestDatabase
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SkillsControllerIntegrationTest {
 	public static final String DEFAULT_SKILL_NAME = "Ruby";
 
@@ -34,14 +37,29 @@ public class SkillsControllerIntegrationTest {
 	private MockMvc mvc;
 	@Autowired
 	private SkillsRepository skillsRepository;
+	@Autowired
+	private ContactsRepository contactsRepository;
+	private Contact contact;
+
+	@BeforeAll
+	public void init() {
+		contactsRepository.deleteAll();
+		contact = contactsRepository.save(TestUtils.getValidContact());
+	}
 
 	@BeforeEach
-	public void resetDb() { skillsRepository.deleteAll(); }
+	public void resetDb() {
+		skillsRepository.deleteAll();
+	}
 
 	@Test
 	public void testCreateSkill() throws Exception {
 		Skill skill = getValidSkill();
-		mvc.perform(post("/skills/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(skill)));
+		mvc.perform(
+				post("/skills/")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(skill))
+						.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)));
 		List<Skill> skills = (List<Skill>) skillsRepository.findAll();
 		Assertions.assertEquals(1, skills.size());
 		Skill savedSkill = skills.get(0);
@@ -66,7 +84,7 @@ public class SkillsControllerIntegrationTest {
 	public void testUniqueName() throws Exception {
 		createAndSaveSkill(DEFAULT_SKILL_NAME);
 		Skill duplicateSkill = getValidSkill();
-		mvc.perform(post("/skills/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(duplicateSkill)))
+		mvc.perform(post("/skills/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(duplicateSkill)).with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isBadRequest())
 				.andExpect(content().string(containsString(Skill.DUPLICATE_NAME_ERROR)));
 	}
