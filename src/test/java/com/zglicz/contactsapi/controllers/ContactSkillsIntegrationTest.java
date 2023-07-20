@@ -22,10 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -155,6 +152,59 @@ public class ContactSkillsIntegrationTest {
 						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString(ContactSkillsController.SKILL_DELETE_SUCCESS)));
+	}
+
+	@Test
+	public void testCanAddContactSkill() throws Exception {
+		ContactSkillDTO contactSkillDTO = new ContactSkillDTO();
+		contactSkillDTO.setSkillLevel(SkillLevel.BEGINNER);
+		contactSkillDTO.setSkillName(skill1.getName());
+		contactSkillDTO.setSkillId(skill1.getId());
+		mvc.perform(
+				post("/contacts/" + contact.getId() + "/skills")
+						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(contactSkillDTO)))
+				.andExpect(status().isOk());
+		List<ContactSkill> skills = contactSkillsRepository.findByContactId(contact.getId());
+		Assertions.assertEquals(1, skills.size());
+		ContactSkill actualSkill = skills.get(0);
+		Assertions.assertEquals(contactSkillDTO.getSkillLevel(), actualSkill.getSkillLevel());
+		Assertions.assertEquals(contactSkillDTO.getSkillName(), actualSkill.getSkill().getName());
+		Assertions.assertEquals(contactSkillDTO.getSkillId(), actualSkill.getSkill().getId());
+	}
+
+	@Test
+	public void testCannotAddSameContactSkill() throws Exception {
+		contactSkillsRepository.save(new ContactSkill(SkillLevel.EXPERT, skill1, contact));
+		ContactSkillDTO contactSkillDTO = new ContactSkillDTO();
+		contactSkillDTO.setSkillLevel(SkillLevel.BEGINNER);
+		contactSkillDTO.setSkillName(skill1.getName());
+		contactSkillDTO.setSkillId(skill1.getId());
+
+		mvc.perform(
+				post("/contacts/" + contact.getId() + "/skills")
+						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(contactSkillDTO)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	public void testHandlesInvalidSkillId() throws Exception {
+		contactSkillsRepository.save(new ContactSkill(SkillLevel.EXPERT, skill1, contact));
+		ContactSkillDTO contactSkillDTO = new ContactSkillDTO();
+		contactSkillDTO.setSkillLevel(SkillLevel.BEGINNER);
+		contactSkillDTO.setSkillName(skill1.getName());
+		Random random = new Random();
+		contactSkillDTO.setSkillId(random.nextLong(100) + 100);
+
+		mvc.perform(
+						post("/contacts/" + contact.getId() + "/skills")
+								.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD))
+								.contentType(MediaType.APPLICATION_JSON)
+								.content(objectMapper.writeValueAsString(contactSkillDTO)))
+				.andExpect(status().isNotFound());
 	}
 
 

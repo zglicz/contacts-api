@@ -1,9 +1,12 @@
 package com.zglicz.contactsapi.controllers;
 
 import com.zglicz.contactsapi.dto.ContactSkillDTO;
+import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.ContactSkill;
+import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.repositories.ContactSkillsRepository;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
+import com.zglicz.contactsapi.repositories.SkillsRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -26,11 +30,13 @@ public class ContactSkillsController {
 	private final ContactsRepository contactsRepository;
 
 	private final ContactSkillsRepository contactSkillsRepository;
+	private final SkillsRepository skillsRepository;
 	private final ModelMapper modelMapper;
 
-	public ContactSkillsController(ContactsRepository contactsRepository, ContactSkillsRepository contactSkillsRepository, ModelMapper modelMapper) {
+	public ContactSkillsController(ContactsRepository contactsRepository, ContactSkillsRepository contactSkillsRepository, SkillsRepository skillsRepository, ModelMapper modelMapper) {
 		this.contactsRepository = contactsRepository;
 		this.contactSkillsRepository = contactSkillsRepository;
+		this.skillsRepository = skillsRepository;
 		this.modelMapper = modelMapper;
 	}
 
@@ -70,6 +76,27 @@ public class ContactSkillsController {
 					}).orElse(ResponseEntity.notFound().build());
 				})
 				.orElse(ResponseEntity.notFound().build());
+	}
+
+	@PreAuthorize("@contactAccess.canUpdateContact(#contactId)")
+	@Operation(summary = "Add a new contact skill, if the skill doesn't yet exist for this contact")
+	@PostMapping("/{contactId}/skills")
+	ResponseEntity<ContactSkillDTO> addContactSkill(@PathVariable final Long contactId, @RequestBody ContactSkillDTO contactSkillDto) {
+		Optional<Contact> contact = contactsRepository.findById(contactId);
+		if (!contact.isPresent()) {
+			return ResponseEntity.notFound().build();
+		}
+		Optional<Skill> skill = skillsRepository.findById(contactSkillDto.getSkillId());
+		if (!skill.isPresent()) {
+			return ResponseEntity.notFound().build();
+		}
+		Optional<ContactSkill> existingContactSkill = contactSkillsRepository.findByContactIdAndSkillId(contact.get().getId(), skill.get().getId());
+		if (existingContactSkill.isPresent()) {
+			// Potentially think about updating the existing ContactSkill
+			return ResponseEntity.badRequest().build();
+		}
+		ContactSkill newContactSkill = contactSkillsRepository.save(new ContactSkill(contactSkillDto.getSkillLevel(), skill.get(), contact.get()));
+		return ResponseEntity.ok(convertToDto(newContactSkill));
 	}
 
 	private ContactSkillDTO convertToDto(ContactSkill contactSkill) {
