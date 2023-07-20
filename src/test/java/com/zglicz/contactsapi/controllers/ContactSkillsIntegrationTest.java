@@ -6,6 +6,7 @@ import com.zglicz.contactsapi.dto.ContactSkillDTO;
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.ContactSkill;
 import com.zglicz.contactsapi.entities.Skill;
+import com.zglicz.contactsapi.misc.ResponseExceptionHandler;
 import com.zglicz.contactsapi.misc.SkillLevel;
 import com.zglicz.contactsapi.repositories.ContactSkillsRepository;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -99,7 +101,7 @@ public class ContactSkillsIntegrationTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(newSkillDTOs)))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString(ContactsController.SKILLS_UPDATED_SUCCESS)));
+				.andExpect(content().string(containsString(ContactSkillsController.SKILLS_UPDATED_SUCCESS)));
 		List<ContactSkill> resultSkills = contactSkillsRepository.findByContactId(contact.getId());
 		Set<String> expectedSkillNames = newSkillDTOs.stream().map(ContactSkillDTO::getSkillName).collect(Collectors.toSet());
 		Set<String> actualSkillNames = resultSkills.stream().map(contactSkill -> contactSkill.getSkill().getName()).collect(Collectors.toSet());
@@ -117,7 +119,7 @@ public class ContactSkillsIntegrationTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(newSkills)))
 				.andExpect(status().isUnauthorized())
-				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+				.andExpect(content().string(containsString(ResponseExceptionHandler.ACCESS_DENIED_ERROR)));
 	}
 
 	@Test
@@ -133,7 +135,7 @@ public class ContactSkillsIntegrationTest {
 						.content(objectMapper.writeValueAsString(contactSkillDTOs))
 						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isBadRequest()).andReturn();
-		Assertions.assertEquals(ContactsController.DUPLICATE_SKILLS_ERROR, mvcResult.getResponse().getContentAsString());
+		Assertions.assertEquals(ResponseExceptionHandler.DUPLICATE_SKILLS_ERROR, mvcResult.getResponse().getContentAsString());
 	}
 
 	@Test
@@ -146,6 +148,17 @@ public class ContactSkillsIntegrationTest {
 						.content("[{\"skillLevel\": \"EXPERT\", \"skill_id\": 1}]"))
 				.andExpect(status().isBadRequest());
 	}
+
+	@Test
+	public void testCanDeleteContactSkill() throws Exception {
+		ContactSkill contactSkill = contactSkillsRepository.save(new ContactSkill(SkillLevel.EXPERT, skill1, contact));
+		mvc.perform(
+				delete("/contacts/" + contact.getId() + "/skills/" + contactSkill.getId())
+						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD)))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString(ContactSkillsController.SKILL_DELETE_SUCCESS)));
+	}
+
 
 	private Contact createNewContact(String email) {
 		Contact contact = TestUtils.getValidContact(email);

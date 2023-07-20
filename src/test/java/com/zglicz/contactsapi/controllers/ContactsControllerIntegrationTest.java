@@ -6,6 +6,7 @@ import com.zglicz.contactsapi.ContactsApiApplication;
 import com.zglicz.contactsapi.dto.ContactDTO;
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.Skill;
+import com.zglicz.contactsapi.misc.ResponseExceptionHandler;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
 import com.zglicz.contactsapi.utils.TestUtils;
@@ -173,7 +174,7 @@ public class ContactsControllerIntegrationTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(contact1Dto)))
 				.andExpect(status().isUnauthorized())
-				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+				.andExpect(content().string(containsString(ResponseExceptionHandler.ACCESS_DENIED_ERROR)));
 	}
 
 	@Test
@@ -186,7 +187,7 @@ public class ContactsControllerIntegrationTest {
 						delete("/contacts/" + contact1.getId().toString())
 								.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isUnauthorized())
-				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+				.andExpect(content().string(containsString(ResponseExceptionHandler.ACCESS_DENIED_ERROR)));
 	}
 
 	@Test
@@ -200,7 +201,7 @@ public class ContactsControllerIntegrationTest {
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(objectMapper.writeValueAsString(List.of(skill))))
 				.andExpect(status().isUnauthorized())
-				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+				.andExpect(content().string(containsString(ResponseExceptionHandler.ACCESS_DENIED_ERROR)));
 	}
 
 	private Contact createAndSaveContact(String email) {
