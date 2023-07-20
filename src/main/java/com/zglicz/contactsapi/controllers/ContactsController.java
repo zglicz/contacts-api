@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -48,12 +49,14 @@ public class ContactsController {
 
     private final ContactsRepository contactsRepository;
     private final ContactSkillsRepository contactSkillsRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public ContactsController(ContactsRepository contactsRepository, ContactSkillsRepository contactSkillsRepository) {
+    public ContactsController(ContactsRepository contactsRepository, ContactSkillsRepository contactSkillsRepository, PasswordEncoder passwordEncoder) {
         this.contactsRepository = contactsRepository;
         this.contactSkillsRepository = contactSkillsRepository;
         this.objectMapper = new ObjectMapper();
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Operation(summary = "Get a list of all contacts")
@@ -120,6 +123,7 @@ public class ContactsController {
     public ResponseEntity<Contact> updateContact(
             @PathVariable final Long id, @Valid @RequestBody Contact updatedContact) {
         updatedContact.setId(id);
+        updatedContact.setPassword(passwordEncoder.encode(updatedContact.getPassword()));
         return contactsRepository.findById(id)
                 .map(contact -> new ResponseEntity<>(contactsRepository.save(updatedContact), HttpStatus.OK))
                 .orElse(ResponseEntity.notFound().build());
@@ -128,6 +132,7 @@ public class ContactsController {
     @Operation(summary = "Create a new contact")
     @PostMapping("/")
     ResponseEntity<Contact> addContact(@Valid @RequestBody Contact contact) {
+        contact.setPassword(passwordEncoder.encode(contact.getPassword()));
         Contact savedContact = contactsRepository.save(contact);
         return ResponseEntity.ok(savedContact);
     }

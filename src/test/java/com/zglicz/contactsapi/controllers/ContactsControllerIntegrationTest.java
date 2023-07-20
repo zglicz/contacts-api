@@ -159,7 +159,7 @@ public class ContactsControllerIntegrationTest {
 		// contact2 tries to update contact1
 		mvc.perform(
 				put("/contacts/" + contact1.getId().toString())
-						.with(httpBasic(contact2.getUsername(), contact2.getPassword()))
+						.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD))
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(contact1)))
 				.andExpect(status().isUnauthorized())
@@ -174,7 +174,7 @@ public class ContactsControllerIntegrationTest {
 		// contact2 tries to update contact1
 		mvc.perform(
 						delete("/contacts/" + contact1.getId().toString())
-								.with(httpBasic(contact2.getUsername(), contact2.getPassword())))
+								.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isUnauthorized())
 				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
 	}
@@ -186,7 +186,7 @@ public class ContactsControllerIntegrationTest {
 		Skill skill = createAndSaveSkill();
 		mvc.perform(
 						post("/contacts/" + contact1.getId().toString() + "/skills")
-								.with(httpBasic(contact2.getUsername(), contact2.getPassword()))
+								.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(objectMapper.writeValueAsString(List.of(skill))))
 				.andExpect(status().isUnauthorized())

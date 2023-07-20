@@ -5,6 +5,7 @@ import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Set;
 
@@ -15,6 +16,8 @@ class ContactTests {
 
     @Autowired
     private Validator validator;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Test
     void testValidInput() {
@@ -22,7 +25,7 @@ class ContactTests {
         contact.setFirstname("Bob");
         contact.setLastname("Ross");
         contact.setEmail("example@email.com");
-        contact.setPassword("password");
+        contact.setPassword(passwordEncoder.encode("password"));
 
         Set<ConstraintViolation<Contact>> violations = validator.validate(contact);
         assertTrue(violations.isEmpty());
@@ -33,7 +36,7 @@ class ContactTests {
         contact.setFirstname("Bob");
         contact.setLastname("Ross");
         contact.setEmail("bad-email");
-        contact.setPassword("goodPassword");
+        contact.setPassword(passwordEncoder.encode("password"));
 
         Set<ConstraintViolation<Contact>> violations = validator.validate(contact);
         assertFalse(violations.isEmpty());

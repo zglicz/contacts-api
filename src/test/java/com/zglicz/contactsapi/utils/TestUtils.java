@@ -2,12 +2,14 @@ package com.zglicz.contactsapi.utils;
 
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.Skill;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-public abstract class TestUtils {
+public class TestUtils {
 	public static final String DEFAULT_FIRSTNAME = "Bob";
 	public static final String DEFAULT_EMAIL = "bob@example.com";
 	public static final String DEFAULT_PASSWORD = "password";
 	public static final String DEFAULT_SKILL_NAME = "Ruby";
+
 
 	public static Contact getValidContact() {
 		return getValidContact(TestUtils.DEFAULT_EMAIL);
@@ -18,7 +20,7 @@ public abstract class TestUtils {
 		contact.setFirstname(TestUtils.DEFAULT_FIRSTNAME);
 		contact.setLastname("Ross");
 		contact.setEmail(email);
-		contact.setPassword(TestUtils.DEFAULT_PASSWORD);
+		contact.setPassword((new BCryptPasswordEncoder()).encode(TestUtils.DEFAULT_PASSWORD));
 		return contact;
 	}
 

@@ -101,7 +101,7 @@ public class ContactSkillsIntegrationTest {
 				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2));
 		mvc.perform(
 				post("/contacts/" + contact.getId().toString() + "/skills")
-						.with(httpBasic(contact2.getUsername(), contact2.getPassword()))
+						.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD))
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(newSkills)))
 				.andExpect(status().isUnauthorized())
@@ -115,7 +115,7 @@ public class ContactSkillsIntegrationTest {
 				post("/contacts/" + contact.getId() + "/skills")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(contactSkills))
-						.with(httpBasic(contact.getUsername(), contact.getPassword())))
+						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isBadRequest()).andReturn();
 		Assertions.assertEquals(ContactsController.DUPLICATE_SKILLS_ERROR, mvcResult.getResponse().getContentAsString());
 	}
