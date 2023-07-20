@@ -196,7 +196,7 @@ public class ContactsControllerIntegrationTest {
 		Contact contact2 = createAndSaveContact("other_email@example.com");
 		Skill skill = createAndSaveSkill();
 		mvc.perform(
-						post("/contacts/" + contact1.getId().toString() + "/skills")
+						put("/contacts/" + contact1.getId().toString() + "/skills")
 								.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(objectMapper.writeValueAsString(List.of(skill))))

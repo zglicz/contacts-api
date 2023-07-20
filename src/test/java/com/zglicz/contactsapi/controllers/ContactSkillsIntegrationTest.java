@@ -31,9 +31,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
@@ -96,7 +94,7 @@ public class ContactSkillsIntegrationTest {
 		List<ContactSkillDTO> newSkillDTOs =
 				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2)).stream().map(contactSkill -> ContactSkillDTO.convertToDto(contactSkill, modelMapper)).collect(Collectors.toList());
 		mvc.perform(
-				post("/contacts/" + contact.getId().toString() + "/skills")
+				put("/contacts/" + contact.getId().toString() + "/skills")
 						.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD))
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(newSkillDTOs)))
@@ -114,7 +112,7 @@ public class ContactSkillsIntegrationTest {
 		List<ContactSkill> newSkills =
 				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2));
 		mvc.perform(
-				post("/contacts/" + contact.getId().toString() + "/skills")
+				put("/contacts/" + contact.getId().toString() + "/skills")
 						.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD))
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(newSkills)))
@@ -130,7 +128,7 @@ public class ContactSkillsIntegrationTest {
 						.map(contactSkill -> ContactSkillDTO.convertToDto(contactSkill, modelMapper))
 						.collect(Collectors.toList());
 		MvcResult mvcResult = mvc.perform(
-				post("/contacts/" + contact.getId() + "/skills")
+				put("/contacts/" + contact.getId() + "/skills")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(contactSkillDTOs))
 						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD)))
@@ -142,7 +140,7 @@ public class ContactSkillsIntegrationTest {
 	public void testHandlesInvalidRequest() throws Exception {
 		List<ContactSkill> contactSkills = Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1));
 		mvc.perform(
-				post("/contacts/" + contact.getId() + "/skills")
+				put("/contacts/" + contact.getId() + "/skills")
 						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD))
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("[{\"skillLevel\": \"EXPERT\", \"skill_id\": 1}]"))

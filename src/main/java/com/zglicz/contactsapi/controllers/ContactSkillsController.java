@@ -44,7 +44,7 @@ public class ContactSkillsController {
 
 	@PreAuthorize("@contactAccess.canUpdateContact(#id)")
 	@Operation(summary = "Update the list of skills for a contact id")
-	@PostMapping("/{id}/skills")
+	@PutMapping("/{id}/skills")
 	public ResponseEntity<String> updateContactSkills(
 			@PathVariable final Long id, @Valid @RequestBody List<ContactSkillDTO> contactSkillDTOs) {
 		return contactsRepository.findById(id)
