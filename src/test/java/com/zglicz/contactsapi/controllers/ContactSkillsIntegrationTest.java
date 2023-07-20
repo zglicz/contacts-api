@@ -63,6 +63,7 @@ public class ContactSkillsIntegrationTest {
 		skill1 = createNewSkill("Java");
 		skill2 = createNewSkill("C++");
 		skill3 = createNewSkill("Javascript");
+		contactSkillsRepository.deleteAll();
 	}
 
 	@AfterEach

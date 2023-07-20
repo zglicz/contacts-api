@@ -99,10 +99,10 @@ public class ContactsController {
             @PathVariable final Long id, @Valid @RequestBody List<ContactSkillDTO> contactSkillDTOs) {
         return contactsRepository.findById(id)
                 .map(contact -> {
+                    contactSkillsRepository.deleteAll(contactSkillsRepository.findByContactId(id));
                     List<ContactSkill> contactSkills = contactSkillDTOs.stream().map(this::convertToEntity).collect(Collectors.toList());
                     contactSkills.stream().forEach(skillContact -> skillContact.setContact(contact));
-                    // TODO: Only delete this users ContactSkill
-                    contactSkillsRepository.deleteAll();
+                    logger.info("adding", contactSkills);
                     contactSkillsRepository.saveAll(contactSkills);
                     return ResponseEntity.ok(SKILLS_UPDATED_SUCCESS);
                 })
