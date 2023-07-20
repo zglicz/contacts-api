@@ -11,8 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,10 +21,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/contacts")
 @Tag(name = "Contacts", description = "Contacts management main endpoint")
 public class ContactsController {
-    Logger logger = LoggerFactory.getLogger(ContactsController.class);
 
     public final static String CONTACT_DELETED_SUCCESS = "Contact deleted";
-    public final static String INVALID_REQUEST_ERROR = "Provided content is invalid";
     public final String DEFAULT_PAGE_NO = "0";
     public final String DEFAULT_PAGE_SIZE = "10";
 
