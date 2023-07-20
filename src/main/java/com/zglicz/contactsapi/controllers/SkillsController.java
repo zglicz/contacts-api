@@ -16,6 +16,7 @@ import java.util.List;
 @RequestMapping("/skills")
 public class SkillsController {
 	private final SkillsRepository skillsRepository;
+//	public final String ACCESS_DENIED_ERROR = "Must be authenticated to add a new skill";
 
 	@Autowired
 	public SkillsController(SkillsRepository skillsRepository) {

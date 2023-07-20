@@ -8,9 +8,7 @@ import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
 import com.zglicz.contactsapi.utils.TestUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -42,6 +40,11 @@ public class ContactsControllerIntegrationTest {
 	private ContactsRepository contactsRepository;
 	@Autowired
 	private SkillsRepository skillsRepository;
+
+	@BeforeEach
+	public void init() {
+		contactsRepository.deleteAll();
+	}
 
 	@AfterEach
 	public void resetDb() {
