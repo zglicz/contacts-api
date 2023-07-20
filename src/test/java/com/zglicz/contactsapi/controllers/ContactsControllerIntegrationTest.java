@@ -44,6 +44,7 @@ public class ContactsControllerIntegrationTest {
 	@BeforeEach
 	public void init() {
 		contactsRepository.deleteAll();
+		skillsRepository.deleteAll();
 	}
 
 	@AfterEach
