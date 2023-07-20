@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,12 +39,12 @@ import java.util.Map;
 public class ContactsController {
     Logger logger = LoggerFactory.getLogger(ContactsController.class);
 
-    @Autowired
     private ObjectMapper objectMapper;
 
     public final static String CONTACT_DELETED_SUCCESS = "Contact deleted";
     public final static String SKILLS_UPDATED_SUCCESS = "Skills saved successfully";
     public final static String DUPLICATE_SKILLS_ERROR = "Duplicate skills provided for a single contact";
+    public final static String ACCESS_DENIED_ERROR = "Not allowed to modify other users' data";
 
     private final ContactsRepository contactsRepository;
     private final ContactSkillsRepository contactSkillsRepository;
@@ -51,6 +53,7 @@ public class ContactsController {
     public ContactsController(ContactsRepository contactsRepository, ContactSkillsRepository contactSkillsRepository) {
         this.contactsRepository = contactsRepository;
         this.contactSkillsRepository = contactSkillsRepository;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Operation(summary = "Get a list of all contacts")
@@ -79,6 +82,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("@contactAccess.canUpdateContact(#id)")
     @Operation(summary = "Update the list of skills for a contact id")
     @PostMapping("/{id}/skills")
     public ResponseEntity<String> updateContactSkills(
@@ -98,6 +102,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("@contactAccess.canUpdateContact(#id)")
     @Operation(summary = "Delete a contact by id")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteContact(@PathVariable final Long id) {
@@ -109,6 +114,7 @@ public class ContactsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("@contactAccess.canUpdateContact(#id)")
     @Operation(summary = "Update a contact by id")
     @PutMapping("/{id}")
     public ResponseEntity<Contact> updateContact(
@@ -146,12 +152,18 @@ public class ContactsController {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public String handleValidationExceptions(DataIntegrityViolationException ex) throws Exception{
+    public String handleValidationExceptions(DataIntegrityViolationException ex) {
         String exMessage = ex.getMostSpecificCause().getMessage();
         if (exMessage.contains("Unique index or primary key violation")) {
             return Contact.EMAIL_DUPLICATE_ERROR;
         } else {
             return Contact.UNKNOWN_ERROR;
         }
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(AccessDeniedException.class)
+    public String handleAccessDeniedException(AccessDeniedException ex) {
+        return ACCESS_DENIED_ERROR;
     }
 }

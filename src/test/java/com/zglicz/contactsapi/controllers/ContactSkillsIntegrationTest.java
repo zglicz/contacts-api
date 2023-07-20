@@ -19,10 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -55,7 +52,7 @@ public class ContactSkillsIntegrationTest {
 
 	@BeforeAll
 	public void init() {
-		contact = createNewContact();
+		contact = createNewContact(TestUtils.DEFAULT_EMAIL);
 		skill1 = createNewSkill("Java");
 		skill2 = createNewSkill("C++");
 		skill3 = createNewSkill("Javascript");
@@ -67,23 +64,19 @@ public class ContactSkillsIntegrationTest {
 	}
 
 	@Test
-	public void testSavesContactSkills() throws Exception {
+	public void testGetsAllContactSkills() throws Exception {
 		// Empty skills expected
-		mvc.perform(get("/contacts/" + contact.getId().toString() + "/skills"))
-				.andExpect(status().isOk())
-				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-				.andExpect(jsonPath("$.length()", is(0)));
-
 		List<ContactSkill> contactSkills = new ArrayList<>() {{
 			add(new ContactSkill(SkillLevel.EXPERT, skill1, contact));
 			add(new ContactSkill(SkillLevel.INTERMEDIATE, skill2, contact));
 		}};
-		contactSkillsRepository.saveAll(contactSkills);
+		contactSkills = (List<ContactSkill>) contactSkillsRepository.saveAll(contactSkills);
 		mvc.perform(get("/contacts/" + contact.getId().toString() + "/skills"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.length()", is(2)))
-				.andExpect(jsonPath("$[0].id", is(skill1.getId().intValue())))
-				.andExpect(jsonPath("$[1].id", is(skill2.getId().intValue())));
+				.andExpect(jsonPath("$[0].id", is(contactSkills.get(0).getId().intValue())))
+				.andExpect(jsonPath("$[1].id", is(contactSkills.get(1).getId().intValue())))
+				.andReturn();
 	}
 
 	@Test
@@ -102,19 +95,33 @@ public class ContactSkillsIntegrationTest {
 	}
 
 	@Test
+	public void testDontAllowChangingOthersContactSkill() throws Exception {
+		Contact contact2 = createNewContact("other_email@example.com");
+		List<ContactSkill> newSkills =
+				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2));
+		mvc.perform(
+				post("/contacts/" + contact.getId().toString() + "/skills")
+						.with(httpBasic(contact2.getUsername(), contact2.getPassword()))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(newSkills)))
+				.andExpect(status().isUnauthorized())
+				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+	}
+
+	@Test
 	public void testDontAllowMultipleContactSkillsWithSameSkill() throws Exception {
 		List<ContactSkill> contactSkills = Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1), new ContactSkill(SkillLevel.BEGINNER, skill1));
 		MvcResult mvcResult = mvc.perform(
 				post("/contacts/" + contact.getId() + "/skills")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(contactSkills))
-						.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
+						.with(httpBasic(contact.getUsername(), contact.getPassword())))
 				.andExpect(status().isBadRequest()).andReturn();
 		Assertions.assertEquals(ContactsController.DUPLICATE_SKILLS_ERROR, mvcResult.getResponse().getContentAsString());
 	}
 
-	private Contact createNewContact() {
-		Contact contact = TestUtils.getValidContact();
+	private Contact createNewContact(String email) {
+		Contact contact = TestUtils.getValidContact(email);
 		return contactsRepository.save(contact);
 	}
 

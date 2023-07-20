@@ -4,7 +4,9 @@ package com.zglicz.contactsapi.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
 import com.zglicz.contactsapi.entities.Contact;
+import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
+import com.zglicz.contactsapi.repositories.SkillsRepository;
 import com.zglicz.contactsapi.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -20,7 +22,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -39,10 +40,13 @@ public class ContactsControllerIntegrationTest {
 	private MockMvc mvc;
 	@Autowired
 	private ContactsRepository contactsRepository;
+	@Autowired
+	private SkillsRepository skillsRepository;
 
 	@AfterEach
 	public void resetDb() {
 		contactsRepository.deleteAll();
+		skillsRepository.deleteAll();
 	}
 
 	@Test
@@ -50,7 +54,7 @@ public class ContactsControllerIntegrationTest {
 		Contact contact = TestUtils.getValidContact();
 		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact)));
 		List<Contact> contacts = (List<Contact>) contactsRepository.findAll();
-		Assertions.assertTrue(contacts.size() == 1);
+		Assertions.assertEquals(1, contacts.size());
 		Contact savedContact = contacts.get(0);
 		Assertions.assertEquals(contact.getFirstname(), savedContact.getFirstname());
 		Assertions.assertEquals(contact.getEmail(), savedContact.getEmail());
@@ -61,8 +65,6 @@ public class ContactsControllerIntegrationTest {
 		String otherEmail = "otherBob@example.com";
 		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
 		Contact contact2 = createAndSaveContact(otherEmail);
-		List<Contact> contacts = (List<Contact>) contactsRepository.findAll();
-		List<String> expectedNames = contacts.stream().map(Contact::getFirstname).collect(Collectors.toList());
 		mvc.perform(get("/contacts/"))
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -131,21 +133,69 @@ public class ContactsControllerIntegrationTest {
 			put("email", Contact.EMAIL_INVALID_ERROR);
 			put("lastname", Contact.LASTNAME_LENGTH_ERROR);
 		}};
-		HashMap<String, String> actualErrors = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), HashMap.class);
+		@SuppressWarnings("unchecked")
+		Map<String, String> actualErrors = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), HashMap.class);
 		Assertions.assertEquals(expectedErrors, actualErrors);
 	}
 
 	@Test
 	public void testUniqueEmailConstraint() throws Exception {
-		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
+		createAndSaveContact(TestUtils.DEFAULT_EMAIL);
 		Contact contact2 = TestUtils.getValidContact(TestUtils.DEFAULT_EMAIL);
 		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact2)))
 				.andExpect(status().isBadRequest())
 				.andExpect(content().string(containsString(Contact.EMAIL_DUPLICATE_ERROR)));
 	}
 
+	@Test
+	public void testCannotUpdateOtherUser() throws Exception {
+		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
+		Contact contact2 = createAndSaveContact("other_email@example.com");
+
+		// contact2 tries to update contact1
+		mvc.perform(
+				put("/contacts/" + contact1.getId().toString())
+						.with(httpBasic(contact2.getUsername(), contact2.getPassword()))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(contact1)))
+				.andExpect(status().isUnauthorized())
+				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+	}
+
+	@Test
+	public void testCannotDeleteOtherUser() throws Exception {
+		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
+		Contact contact2 = createAndSaveContact("other_email@example.com");
+
+		// contact2 tries to update contact1
+		mvc.perform(
+						delete("/contacts/" + contact1.getId().toString())
+								.with(httpBasic(contact2.getUsername(), contact2.getPassword())))
+				.andExpect(status().isUnauthorized())
+				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+	}
+
+	@Test
+	public void testCannotUpdateOtherUsersSkills() throws Exception {
+		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
+		Contact contact2 = createAndSaveContact("other_email@example.com");
+		Skill skill = createAndSaveSkill();
+		mvc.perform(
+						post("/contacts/" + contact1.getId().toString() + "/skills")
+								.with(httpBasic(contact2.getUsername(), contact2.getPassword()))
+								.contentType(MediaType.APPLICATION_JSON)
+								.content(objectMapper.writeValueAsString(List.of(skill))))
+				.andExpect(status().isUnauthorized())
+				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
+	}
+
 	private Contact createAndSaveContact(String email) {
 		Contact contact = TestUtils.getValidContact(email);
 		return contactsRepository.save(contact);
+	}
+
+	private Skill createAndSaveSkill() {
+		Skill skill = TestUtils.getValidSkill();
+		return skillsRepository.save(skill);
 	}
 }

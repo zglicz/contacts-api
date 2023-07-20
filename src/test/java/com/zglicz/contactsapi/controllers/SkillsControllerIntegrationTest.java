@@ -29,7 +29,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureTestDatabase
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SkillsControllerIntegrationTest {
-	public static final String DEFAULT_SKILL_NAME = "Ruby";
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -54,7 +53,7 @@ public class SkillsControllerIntegrationTest {
 
 	@Test
 	public void testCreateSkill() throws Exception {
-		Skill skill = getValidSkill();
+		Skill skill = TestUtils.getValidSkill();
 		mvc.perform(
 				post("/skills/")
 						.contentType(MediaType.APPLICATION_JSON)
@@ -69,7 +68,7 @@ public class SkillsControllerIntegrationTest {
 	@Test
 	public void testGetAllSkills() throws Exception {
 		String otherSkillName = "Java";
-		createAndSaveSkill(DEFAULT_SKILL_NAME);
+		createAndSaveSkill(TestUtils.DEFAULT_SKILL_NAME);
 		createAndSaveSkill(otherSkillName);
 
 		mvc.perform(get("/skills/"))
@@ -77,30 +76,20 @@ public class SkillsControllerIntegrationTest {
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andExpect(jsonPath("$.length()", is(2)))
 				.andExpect(jsonPath("$[0].name", is(otherSkillName)))
-				.andExpect(jsonPath("$[1].name", is(DEFAULT_SKILL_NAME)));;
+				.andExpect(jsonPath("$[1].name", is(TestUtils.DEFAULT_SKILL_NAME)));;
 	}
 
 	@Test
 	public void testUniqueName() throws Exception {
-		createAndSaveSkill(DEFAULT_SKILL_NAME);
-		Skill duplicateSkill = getValidSkill();
+		createAndSaveSkill(TestUtils.DEFAULT_SKILL_NAME);
+		Skill duplicateSkill = TestUtils.getValidSkill();
 		mvc.perform(post("/skills/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(duplicateSkill)).with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isBadRequest())
 				.andExpect(content().string(containsString(Skill.DUPLICATE_NAME_ERROR)));
 	}
 
-	private Skill getValidSkill(String name) {
-		Skill skill = new Skill();
-		skill.setName(name);
-		return skill;
-	}
-
-	private Skill getValidSkill() {
-		return getValidSkill(DEFAULT_SKILL_NAME);
-	}
-
 	private Skill createAndSaveSkill(String name) {
-		Skill skill = getValidSkill(name);
+		Skill skill = TestUtils.getValidSkill(name);
 		return skillsRepository.save(skill);
 	}
 }
