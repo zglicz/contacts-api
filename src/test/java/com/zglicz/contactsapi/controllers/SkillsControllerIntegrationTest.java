@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.Skill;
+import com.zglicz.contactsapi.misc.ResponseExceptionHandler;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
 import com.zglicz.contactsapi.utils.TestUtils;
@@ -85,7 +86,7 @@ public class SkillsControllerIntegrationTest {
 		Skill duplicateSkill = TestUtils.getValidSkill();
 		mvc.perform(post("/skills/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(duplicateSkill)).with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isBadRequest())
-				.andExpect(content().string(containsString(Skill.DUPLICATE_NAME_ERROR)));
+				.andExpect(content().string(containsString(ResponseExceptionHandler.DUPLICATE_NAME_ERROR)));
 	}
 
 	private Skill createAndSaveSkill(String name) {

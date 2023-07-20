@@ -20,6 +20,7 @@ import java.util.Map;
 public class ResponseExceptionHandler {
 	public final static String DUPLICATE_SKILLS_ERROR = "Duplicate skills provided for a single contact";
 	public final static String ACCESS_DENIED_ERROR = "Not allowed to modify other users' data";
+	public final static String DUPLICATE_NAME_ERROR = "Skill name already exists";
 
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ExceptionHandler(value=MethodArgumentNotValidException.class)
@@ -42,6 +43,8 @@ public class ResponseExceptionHandler {
 			return DUPLICATE_SKILLS_ERROR;
 		} else if (exMessage.contains("PUBLIC.CONTACT(EMAIL NULLS FIRST)")) {
 			return Contact.EMAIL_DUPLICATE_ERROR;
+		} else if (exMessage.contains("PUBLIC.SKILL(NAME NULLS FIRST)")) {
+			return DUPLICATE_NAME_ERROR;
 		} else {
 			return Contact.UNKNOWN_ERROR;
 		}

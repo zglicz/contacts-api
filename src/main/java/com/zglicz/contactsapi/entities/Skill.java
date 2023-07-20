@@ -10,7 +10,6 @@ import jakarta.validation.constraints.Size;
 @Entity
 public class Skill {
 	public final static String NAME_REQUIRED_ERROR = "Name is required";
-	public final static String DUPLICATE_NAME_ERROR = "Skill name already exists";
 
 	@Id
 	@GeneratedValue
