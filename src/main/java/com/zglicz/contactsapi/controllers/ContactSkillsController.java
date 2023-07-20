@@ -1,14 +1,10 @@
 package com.zglicz.contactsapi.controllers;
 
 import com.zglicz.contactsapi.dto.ContactSkillDTO;
-import com.zglicz.contactsapi.repositories.ContactSkillsRepository;
-import com.zglicz.contactsapi.repositories.ContactsRepository;
-import com.zglicz.contactsapi.repositories.SkillsRepository;
 import com.zglicz.contactsapi.service.ContactSkillsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,18 +20,9 @@ public class ContactSkillsController {
 	public final static String SKILL_DELETE_SUCCESS = "Contact skill was deleted";
 
 	private final ContactSkillsService contactSkillsService;
-	private final ContactsRepository contactsRepository;
 
-	private final ContactSkillsRepository contactSkillsRepository;
-	private final SkillsRepository skillsRepository;
-	private final ModelMapper modelMapper;
-
-	public ContactSkillsController(ContactSkillsService contactSkillsService, ContactsRepository contactsRepository, ContactSkillsRepository contactSkillsRepository, SkillsRepository skillsRepository, ModelMapper modelMapper) {
+	public ContactSkillsController(ContactSkillsService contactSkillsService) {
 		this.contactSkillsService = contactSkillsService;
-		this.contactsRepository = contactsRepository;
-		this.contactSkillsRepository = contactSkillsRepository;
-		this.skillsRepository = skillsRepository;
-		this.modelMapper = modelMapper;
 	}
 
 	@Operation(summary = "Get a list of all skills for a contact id")

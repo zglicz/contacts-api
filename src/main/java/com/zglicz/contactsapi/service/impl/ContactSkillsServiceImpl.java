@@ -45,7 +45,7 @@ public class ContactSkillsServiceImpl implements ContactSkillsService {
 		Contact contact = contactsRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Contact", "id", id));
 		contactSkillsRepository.deleteAll(contactSkillsRepository.findByContactId(id));
 		List<ContactSkill> contactSkills = contactSkillDTOs.stream().map(this::convertToEntity).collect(Collectors.toList());
-		contactSkills.stream().forEach(skillContact -> skillContact.setContact(contact));
+		contactSkills.forEach(skillContact -> skillContact.setContact(contact));
 		contactSkillsRepository.saveAll(contactSkills);
 	}
 
@@ -62,8 +62,7 @@ public class ContactSkillsServiceImpl implements ContactSkillsService {
 		Skill skill = skillsRepository.findById(contactSkillDTO.getSkillId()).orElseThrow(() -> new ResourceNotFoundException("Skill", "id", contactSkillDTO.getSkillId()));
 		Optional<ContactSkill> existingContactSkill = contactSkillsRepository.findByContactIdAndSkillId(contactId, contactSkillDTO.getSkillId());
 		if (existingContactSkill.isPresent()) {
-			// Potentially think about updating the existing ContactSkill
-
+			// TODO: Potentially think about updating the existing ContactSkill
 		}
 		ContactSkill newContactSkill = contactSkillsRepository.save(new ContactSkill(contactSkillDTO.getSkillLevel(), skill, contact));
 		return convertToDto(newContactSkill);

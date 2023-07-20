@@ -20,8 +20,7 @@ public class ContactDTO {
 	private String plainPassword;
 
 	public static ContactDTO convertToDto(Contact contact, ModelMapper modelMapper) {
-		ContactDTO contactDto = modelMapper.map(contact, ContactDTO.class);
-		return contactDto;
+		return modelMapper.map(contact, ContactDTO.class);
 	}
 
 	public static Contact convertToEntity(ContactDTO contactDto, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {

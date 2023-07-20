@@ -14,12 +14,10 @@ public class SkillDTO {
 	private String name;
 
 	public static SkillDTO convertToDTO(Skill skill, ModelMapper modelMapper) {
-		SkillDTO skillDTO = modelMapper.map(skill, SkillDTO.class);
-		return skillDTO;
+		return modelMapper.map(skill, SkillDTO.class);
 	}
 
 	public static Skill convertToEntity(SkillDTO skillDTO, ModelMapper modelMapper) {
-		Skill skill = modelMapper.map(skillDTO, Skill.class);
-		return skill;
+		return modelMapper.map(skillDTO, Skill.class);
 	}
 }

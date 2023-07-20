@@ -18,12 +18,10 @@ public class ContactSkillDTO {
 	private String skillName;
 
 	public static ContactSkillDTO convertToDto(ContactSkill contactSkill, ModelMapper modelMapper) {
-		ContactSkillDTO contactSkillDTO = modelMapper.map(contactSkill, ContactSkillDTO.class);
-		return contactSkillDTO;
+		return modelMapper.map(contactSkill, ContactSkillDTO.class);
 	}
 
 	public static ContactSkill convertToEntity(ContactSkillDTO contactSkillDTO, ModelMapper modelMapper) {
-		ContactSkill contactSkill = modelMapper.map(contactSkillDTO, ContactSkill.class);
-		return contactSkill;
+		return modelMapper.map(contactSkillDTO, ContactSkill.class);
 	}
 }

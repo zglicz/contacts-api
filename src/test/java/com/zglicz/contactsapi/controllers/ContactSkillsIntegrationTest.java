@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -89,7 +90,7 @@ public class ContactSkillsIntegrationTest {
 		contactSkillsRepository.saveAll(
 				Arrays.asList(new ContactSkill(SkillLevel.EXPERT, skill1, contact), new ContactSkill(SkillLevel.INTERMEDIATE, skill2, contact)));
 		List<ContactSkillDTO> newSkillDTOs =
-				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2)).stream().map(contactSkill -> ContactSkillDTO.convertToDto(contactSkill, modelMapper)).collect(Collectors.toList());
+				Stream.of(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2)).map(contactSkill -> ContactSkillDTO.convertToDto(contactSkill, modelMapper)).collect(Collectors.toList());
 		mvc.perform(
 				put("/contacts/" + contact.getId().toString() + "/skills")
 						.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD))
@@ -120,8 +121,7 @@ public class ContactSkillsIntegrationTest {
 	@Test
 	public void testDontAllowMultipleContactSkillsWithSameSkill() throws Exception {
 		List<ContactSkillDTO> contactSkillDTOs =
-				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1), new ContactSkill(SkillLevel.BEGINNER, skill1))
-						.stream()
+				Stream.of(new ContactSkill(SkillLevel.INTERMEDIATE, skill1), new ContactSkill(SkillLevel.BEGINNER, skill1))
 						.map(contactSkill -> ContactSkillDTO.convertToDto(contactSkill, modelMapper))
 						.collect(Collectors.toList());
 		MvcResult mvcResult = mvc.perform(
@@ -135,7 +135,7 @@ public class ContactSkillsIntegrationTest {
 
 	@Test
 	public void testHandlesInvalidRequest() throws Exception {
-		List<ContactSkill> contactSkills = Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1));
+		List.of(new ContactSkill(SkillLevel.INTERMEDIATE, skill1));
 		mvc.perform(
 				put("/contacts/" + contact.getId() + "/skills")
 						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD))

@@ -20,7 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class WebSecurityConfiguration {
-	private ContactsDetailsService contactsDetailsService;
+	private final ContactsDetailsService contactsDetailsService;
 
 	public WebSecurityConfiguration(ContactsDetailsService contactsDetailsService) {
 		this.contactsDetailsService = contactsDetailsService;

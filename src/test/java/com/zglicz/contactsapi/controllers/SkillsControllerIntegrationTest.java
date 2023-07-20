@@ -2,7 +2,6 @@ package com.zglicz.contactsapi.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
-import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.exceptions.ResponseExceptionHandler;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
@@ -39,12 +38,11 @@ public class SkillsControllerIntegrationTest {
 	private SkillsRepository skillsRepository;
 	@Autowired
 	private ContactsRepository contactsRepository;
-	private Contact contact;
 
 	@BeforeAll
 	public void init() {
 		contactsRepository.deleteAll();
-		contact = contactsRepository.save(TestUtils.getValidContact());
+		contactsRepository.save(TestUtils.getValidContact());
 	}
 
 	@BeforeEach
@@ -77,7 +75,7 @@ public class SkillsControllerIntegrationTest {
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andExpect(jsonPath("$.length()", is(2)))
 				.andExpect(jsonPath("$[0].name", is(otherSkillName)))
-				.andExpect(jsonPath("$[1].name", is(TestUtils.DEFAULT_SKILL_NAME)));;
+				.andExpect(jsonPath("$[1].name", is(TestUtils.DEFAULT_SKILL_NAME)));
 	}
 
 	@Test

@@ -49,6 +49,9 @@ public class Contact implements UserDetails {
         return Set.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
+    @OneToMany(mappedBy = "contact")
+    private Set<ContactSkill> skills;
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -72,9 +75,6 @@ public class Contact implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
-    @OneToMany(mappedBy = "contact")
-    private Set<ContactSkill> skills;
 
     public void setId(Long id) {
         this.id = id;

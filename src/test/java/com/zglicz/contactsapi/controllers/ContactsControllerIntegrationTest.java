@@ -65,7 +65,7 @@ public class ContactsControllerIntegrationTest {
 	public void testCreateContact() throws Exception {
 		ContactDTO contactDTO = TestUtils.getValidContactDTO();
 		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contactDTO)));
-		List<Contact> contacts = (List<Contact>) contactsRepository.findAll();
+		List<Contact> contacts = contactsRepository.findAll();
 		Assertions.assertEquals(1, contacts.size());
 		Contact savedContact = contacts.get(0);
 		Assertions.assertEquals(contactDTO.getFirstname(), savedContact.getFirstname());
