@@ -37,7 +37,7 @@ public class ContactsController {
             @ApiResponse(responseCode = "200", description = "Successfully loaded all contacts",
                     content = { @Content(mediaType = "application/json",
                             array = @ArraySchema(schema = @Schema(implementation = ContactDTO.class))) })})
-    @GetMapping(value = "/", params = {"page", "size"})
+    @GetMapping(value = "/")
     public ResponseEntity<ContactsResponse> getContacts(
             @RequestParam(value = "page", defaultValue = DEFAULT_PAGE_NO, required = false) int pageNo,
             @RequestParam(value = "size", defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize) {

@@ -80,11 +80,11 @@ public class ContactsControllerIntegrationTest {
 		mvc.perform(get("/contacts/"))
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-				.andExpect(jsonPath("$.length()", is(2)))
-				.andExpect(jsonPath("$[0].email", is(TestUtils.DEFAULT_EMAIL)))
-				.andExpect(jsonPath("$[0].id", is(contact1.getId().intValue())))
-				.andExpect(jsonPath("$[1].email", is(otherEmail)))
-				.andExpect(jsonPath("$[1].id", is(contact2.getId().intValue())));
+				.andExpect(jsonPath("$.totalElements", is(2)))
+				.andExpect(jsonPath("$.contacts.[0].email", is(TestUtils.DEFAULT_EMAIL)))
+				.andExpect(jsonPath("$.contacts.[0].id", is(contact1.getId().intValue())))
+				.andExpect(jsonPath("$.contacts.[1].email", is(otherEmail)))
+				.andExpect(jsonPath("$.contacts.[1].id", is(contact2.getId().intValue())));
 	}
 
 	@Test
