@@ -120,6 +120,17 @@ public class ContactSkillsIntegrationTest {
 		Assertions.assertEquals(ContactsController.DUPLICATE_SKILLS_ERROR, mvcResult.getResponse().getContentAsString());
 	}
 
+	@Test
+	public void testHandlesInvalidRequest() throws Exception {
+		List<ContactSkill> contactSkills = Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1));
+		mvc.perform(
+				post("/contacts/" + contact.getId() + "/skills")
+						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("[{\"skillLevel\": \"EXPERT\", \"skill_id\": 1}]"))
+				.andExpect(status().isBadRequest());
+	}
+
 	private Contact createNewContact(String email) {
 		Contact contact = TestUtils.getValidContact(email);
 		return contactsRepository.save(contact);

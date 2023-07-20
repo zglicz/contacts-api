@@ -15,7 +15,8 @@ public class UniqueSkillsConstraintValidator implements ConstraintValidator<Uniq
 	Logger logger = LoggerFactory.getLogger(ContactsController.class);
 	@Override
 	public boolean isValid(List<ContactSkill> contactSkills, ConstraintValidatorContext context) {
-		Set<Long> uniqueSkills = contactSkills.stream().map(contactSkill -> contactSkill.getSkill().getId()).collect(Collectors.toSet());
+		// Check each skill has an id
+		Set<Long> uniqueSkills = contactSkills.stream().filter(contactSkill -> contactSkill.getSkill() != null).map(contactSkill -> contactSkill.getSkill().getId()).collect(Collectors.toSet());
 		logger.info("skills", uniqueSkills);
 		return uniqueSkills.size() == contactSkills.size();
 	}

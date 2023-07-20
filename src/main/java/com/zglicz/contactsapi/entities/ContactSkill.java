@@ -1,5 +1,6 @@
 package com.zglicz.contactsapi.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zglicz.contactsapi.misc.SkillLevel;
 import jakarta.persistence.*;
 
@@ -12,6 +13,7 @@ public class ContactSkill {
 	@Enumerated(EnumType.STRING)
 	private SkillLevel skillLevel;
 
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	@ManyToOne
 	@JoinColumn(name= "contact_id", nullable = false)
 	private Contact contact;

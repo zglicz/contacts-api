@@ -46,6 +46,7 @@ public class ContactsController {
     public final static String SKILLS_UPDATED_SUCCESS = "Skills saved successfully";
     public final static String DUPLICATE_SKILLS_ERROR = "Duplicate skills provided for a single contact";
     public final static String ACCESS_DENIED_ERROR = "Not allowed to modify other users' data";
+    public final static String INVALID_REQUEST_ERROR = "Provided content is invalid";
 
     private final ContactsRepository contactsRepository;
     private final ContactSkillsRepository contactSkillsRepository;
@@ -171,4 +172,10 @@ public class ContactsController {
     public String handleAccessDeniedException(AccessDeniedException ex) {
         return ACCESS_DENIED_ERROR;
     }
+
+//    @ResponseStatus(HttpStatus.BAD_REQUEST)
+//    @ExceptionHandler(ValidationException.class)
+//    public String handleValidationException(ValidationException ex) {
+//        return INVALID_REQUEST_ERROR;
+//    }
 }
