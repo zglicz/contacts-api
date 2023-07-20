@@ -6,7 +6,7 @@ import com.zglicz.contactsapi.dto.ContactSkillDTO;
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.ContactSkill;
 import com.zglicz.contactsapi.entities.Skill;
-import com.zglicz.contactsapi.misc.ResponseExceptionHandler;
+import com.zglicz.contactsapi.exceptions.ResponseExceptionHandler;
 import com.zglicz.contactsapi.misc.SkillLevel;
 import com.zglicz.contactsapi.repositories.ContactSkillsRepository;
 import com.zglicz.contactsapi.repositories.ContactsRepository;

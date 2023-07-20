@@ -1,4 +1,4 @@
-package com.zglicz.contactsapi.misc;
+package com.zglicz.contactsapi.exceptions;
 
 import com.zglicz.contactsapi.entities.Contact;
 import jakarta.validation.ConstraintViolation;
