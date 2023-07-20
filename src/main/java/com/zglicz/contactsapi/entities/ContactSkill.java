@@ -5,6 +5,7 @@ import com.zglicz.contactsapi.misc.SkillLevel;
 import jakarta.persistence.*;
 
 @Entity
+@Table(uniqueConstraints = { @UniqueConstraint(columnNames = {"contact_id", "skill_id"})})
 public class ContactSkill {
 	@Id
 	@GeneratedValue

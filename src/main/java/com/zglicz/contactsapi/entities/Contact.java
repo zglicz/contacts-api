@@ -1,7 +1,6 @@
 package com.zglicz.contactsapi.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -43,29 +42,24 @@ public class Contact implements UserDetails {
     @Column(unique=true)
     private String email;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank(message = PASSWORD_NOT_EMPTY_ERROR)
     private String password;
 
-    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Set.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
-    @JsonIgnore
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
 
-    @JsonIgnore
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
 
-    @JsonIgnore
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
@@ -75,7 +69,6 @@ public class Contact implements UserDetails {
         this.password = password;
     }
 
-    @JsonIgnore
     @Override
     public boolean isEnabled() {
         return true;

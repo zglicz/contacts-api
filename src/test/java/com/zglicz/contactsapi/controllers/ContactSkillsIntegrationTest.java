@@ -2,6 +2,7 @@ package com.zglicz.contactsapi.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
+import com.zglicz.contactsapi.dto.ContactSkillDTO;
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.ContactSkill;
 import com.zglicz.contactsapi.entities.Skill;
@@ -11,6 +12,7 @@ import com.zglicz.contactsapi.repositories.ContactsRepository;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
 import com.zglicz.contactsapi.utils.TestUtils;
 import org.junit.jupiter.api.*;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,7 +21,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -46,6 +51,8 @@ public class ContactSkillsIntegrationTest {
 	ContactsRepository contactsRepository;
 	@Autowired
 	SkillsRepository skillsRepository;
+	@Autowired
+	ModelMapper modelMapper;
 
 	private Contact contact;
 	private Skill skill1, skill2, skill3;
@@ -83,13 +90,17 @@ public class ContactSkillsIntegrationTest {
 	public void testReplacesSkills() throws Exception {
 		contactSkillsRepository.saveAll(
 				Arrays.asList(new ContactSkill(SkillLevel.EXPERT, skill1, contact), new ContactSkill(SkillLevel.INTERMEDIATE, skill2, contact)));
-		List<ContactSkill> newSkills =
-				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2));
-		mvc.perform(post("/contacts/" + contact.getId().toString() + "/skills").with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(newSkills)))
+		List<ContactSkillDTO> newSkillDTOs =
+				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill3), new ContactSkill(SkillLevel.EXPERT, skill2)).stream().map(contactSkill -> ContactSkillDTO.convertToDto(contactSkill, modelMapper)).collect(Collectors.toList());
+		mvc.perform(
+				post("/contacts/" + contact.getId().toString() + "/skills")
+						.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(newSkillDTOs)))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString(ContactsController.SKILLS_UPDATED_SUCCESS)));
 		List<ContactSkill> resultSkills = contactSkillsRepository.findByContactId(contact.getId());
-		Set<String> expectedSkillNames = newSkills.stream().map(contactSkill -> contactSkill.getSkill().getName()).collect(Collectors.toSet());
+		Set<String> expectedSkillNames = newSkillDTOs.stream().map(ContactSkillDTO::getSkillName).collect(Collectors.toSet());
 		Set<String> actualSkillNames = resultSkills.stream().map(contactSkill -> contactSkill.getSkill().getName()).collect(Collectors.toSet());
 		Assertions.assertEquals(expectedSkillNames, actualSkillNames);
 	}
@@ -110,11 +121,15 @@ public class ContactSkillsIntegrationTest {
 
 	@Test
 	public void testDontAllowMultipleContactSkillsWithSameSkill() throws Exception {
-		List<ContactSkill> contactSkills = Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1), new ContactSkill(SkillLevel.BEGINNER, skill1));
+		List<ContactSkillDTO> contactSkillDTOs =
+				Arrays.asList(new ContactSkill(SkillLevel.INTERMEDIATE, skill1), new ContactSkill(SkillLevel.BEGINNER, skill1))
+						.stream()
+						.map(contactSkill -> ContactSkillDTO.convertToDto(contactSkill, modelMapper))
+						.collect(Collectors.toList());
 		MvcResult mvcResult = mvc.perform(
 				post("/contacts/" + contact.getId() + "/skills")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(contactSkills))
+						.content(objectMapper.writeValueAsString(contactSkillDTOs))
 						.with(httpBasic(contact.getUsername(), TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isBadRequest()).andReturn();
 		Assertions.assertEquals(ContactsController.DUPLICATE_SKILLS_ERROR, mvcResult.getResponse().getContentAsString());

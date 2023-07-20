@@ -30,6 +30,7 @@ class ContactTests {
         Set<ConstraintViolation<Contact>> violations = validator.validate(contact);
         assertTrue(violations.isEmpty());
     }
+
     @Test
     void testInvalidEmail() {
         Contact contact = new Contact();

@@ -3,12 +3,17 @@ package com.zglicz.contactsapi.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zglicz.contactsapi.ContactsApiApplication;
+import com.zglicz.contactsapi.dto.ContactDTO;
 import com.zglicz.contactsapi.entities.Contact;
 import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.repositories.ContactsRepository;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
 import com.zglicz.contactsapi.utils.TestUtils;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -40,6 +45,8 @@ public class ContactsControllerIntegrationTest {
 	private ContactsRepository contactsRepository;
 	@Autowired
 	private SkillsRepository skillsRepository;
+	@Autowired
+	private ModelMapper modelMapper;
 
 	@BeforeEach
 	public void init() {
@@ -55,13 +62,13 @@ public class ContactsControllerIntegrationTest {
 
 	@Test
 	public void testCreateContact() throws Exception {
-		Contact contact = TestUtils.getValidContact();
-		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact)));
+		ContactDTO contactDTO = TestUtils.getValidContactDTO();
+		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contactDTO)));
 		List<Contact> contacts = (List<Contact>) contactsRepository.findAll();
 		Assertions.assertEquals(1, contacts.size());
 		Contact savedContact = contacts.get(0);
-		Assertions.assertEquals(contact.getFirstname(), savedContact.getFirstname());
-		Assertions.assertEquals(contact.getEmail(), savedContact.getEmail());
+		Assertions.assertEquals(contactDTO.getFirstname(), savedContact.getFirstname());
+		Assertions.assertEquals(contactDTO.getEmail(), savedContact.getEmail());
 	}
 
 	@Test
@@ -93,11 +100,13 @@ public class ContactsControllerIntegrationTest {
 	public void testUpdateUser() throws Exception {
 		Contact contact = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
 		String updatedFirstname = "Bobby";
-		contact.setFirstname(updatedFirstname);
+		ContactDTO updated = ContactDTO.convertToDto(contact, modelMapper);
+		updated.setFirstname(updatedFirstname);
+		updated.setPlainPassword(TestUtils.DEFAULT_PASSWORD);
 		mvc.perform(
 					put("/contacts/" + contact.getId().toString())
 							.contentType(MediaType.APPLICATION_JSON)
-							.content(objectMapper.writeValueAsString(contact))
+							.content(objectMapper.writeValueAsString(updated))
 							.with(httpBasic(TestUtils.DEFAULT_EMAIL, TestUtils.DEFAULT_PASSWORD)))
 				.andExpect(status().isOk())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -123,17 +132,17 @@ public class ContactsControllerIntegrationTest {
 
 	@Test
 	public void testInvalidFieldsErrors() throws Exception {
-		Contact contact = new Contact();
-		contact.setEmail("invalid.email");
-		contact.setFirstname("A");
-		contact.setLastname(new String(new char[60]).replace('\0', ' '));
+		ContactDTO contactDto = new ContactDTO();
+		contactDto.setEmail("invalid.email");
+		contactDto.setFirstname("A");
+		contactDto.setLastname(new String(new char[60]).replace('\0', ' '));
+		contactDto.setPlainPassword(TestUtils.DEFAULT_PASSWORD);
 
-		MvcResult mvcResult = mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact)))
+		MvcResult mvcResult = mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contactDto)))
 				.andExpect(status().isBadRequest())
 				.andReturn();
 		Map<String, String> expectedErrors = new HashMap<>() {{
 			put("firstname", Contact.FIRSTNAME_LENGTH_ERROR);
-			put("password", Contact.PASSWORD_NOT_EMPTY_ERROR);
 			put("email", Contact.EMAIL_INVALID_ERROR);
 			put("lastname", Contact.LASTNAME_LENGTH_ERROR);
 		}};
@@ -145,7 +154,7 @@ public class ContactsControllerIntegrationTest {
 	@Test
 	public void testUniqueEmailConstraint() throws Exception {
 		createAndSaveContact(TestUtils.DEFAULT_EMAIL);
-		Contact contact2 = TestUtils.getValidContact(TestUtils.DEFAULT_EMAIL);
+		ContactDTO contact2 = TestUtils.getValidContactDTO();
 		mvc.perform(post("/contacts/").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact2)))
 				.andExpect(status().isBadRequest())
 				.andExpect(content().string(containsString(Contact.EMAIL_DUPLICATE_ERROR)));
@@ -155,13 +164,14 @@ public class ContactsControllerIntegrationTest {
 	public void testCannotUpdateOtherUser() throws Exception {
 		Contact contact1 = createAndSaveContact(TestUtils.DEFAULT_EMAIL);
 		Contact contact2 = createAndSaveContact("other_email@example.com");
+		ContactDTO contact1Dto = ContactDTO.convertToDto(contact1, modelMapper);
 
 		// contact2 tries to update contact1
 		mvc.perform(
 				put("/contacts/" + contact1.getId().toString())
 						.with(httpBasic(contact2.getUsername(), TestUtils.DEFAULT_PASSWORD))
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(contact1)))
+						.content(objectMapper.writeValueAsString(contact1Dto)))
 				.andExpect(status().isUnauthorized())
 				.andExpect(content().string(containsString(ContactsController.ACCESS_DENIED_ERROR)));
 	}
