@@ -4,6 +4,7 @@ import com.zglicz.contactsapi.dto.SkillDTO;
 import com.zglicz.contactsapi.entities.Skill;
 import com.zglicz.contactsapi.repositories.SkillsRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import java.util.stream.StreamSupport;
 
 @RestController
 @RequestMapping("/skills")
+@Tag(name = "Skills", description = "Management of skills for a contact")
 public class SkillsController {
 	private final SkillsRepository skillsRepository;
 	private final ModelMapper modelMapper;

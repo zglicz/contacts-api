@@ -56,7 +56,7 @@ public class ContactsController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully loaded all contacts",
                     content = { @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = Contact.class))) })})
+                            array = @ArraySchema(schema = @Schema(implementation = ContactDTO.class))) })})
     @GetMapping("/")
     public ResponseEntity<List<ContactDTO>> getContacts() {
         List<Contact> contacts = (List<Contact>) contactsRepository.findAll();
@@ -86,13 +86,13 @@ public class ContactsController {
     @PreAuthorize("@contactAccess.canUpdateContact(#id)")
     @Operation(summary = "Update a contact by id")
     @PutMapping("/{id}")
-    public ResponseEntity<Contact> updateContact(
+    public ResponseEntity<ContactDTO> updateContact(
             @PathVariable final Long id, @Valid @RequestBody ContactDTO updatedContactDTO) {
         return contactsRepository.findById(id)
                 .map(contact -> {
                     Contact updatedContact = convertToEntity(updatedContactDTO);
                     updatedContact.setId(id);
-                    return new ResponseEntity<>(contactsRepository.save(updatedContact), HttpStatus.OK);
+                    return new ResponseEntity<>(convertToDto(contactsRepository.save(updatedContact)), HttpStatus.OK);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
