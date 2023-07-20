@@ -1,6 +1,9 @@
 package com.zglicz.contactsapi.misc;
 
 import com.zglicz.contactsapi.entities.Contact;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -42,6 +45,18 @@ public class ResponseExceptionHandler {
 		} else {
 			return Contact.UNKNOWN_ERROR;
 		}
+	}
+
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ExceptionHandler(ConstraintViolationException.class)
+	public Map<String, String> handleValidationExceptions(ConstraintViolationException ex) {
+		Map<String, String> errors = new HashMap<>();
+		for (ConstraintViolation cv : ex.getConstraintViolations()) {
+			String fieldName = ((PathImpl)cv.getPropertyPath()).getLeafNode().getName();
+			String message = cv.getMessage();
+			errors.put(fieldName, message);
+		}
+		return errors;
 	}
 
 	@ResponseStatus(HttpStatus.UNAUTHORIZED)
