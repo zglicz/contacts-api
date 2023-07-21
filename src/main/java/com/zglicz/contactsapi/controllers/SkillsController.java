@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/skills")
-@Tag(name = "Skills", description = "Management of skills for a contact")
+@Tag(name = "Skills", description = "Management of global skills")
 public class SkillsController {
 	private final SkillsService skillsService;
 

@@ -92,13 +92,6 @@
                     <mainClass>com.zglicz.contactsapi.ContactsApiApplication</mainClass>
                     <layout>JAR</layout>
                 </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

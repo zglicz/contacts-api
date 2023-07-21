@@ -4,11 +4,6 @@ import com.zglicz.contactsapi.dto.ContactDTO;
 import com.zglicz.contactsapi.dto.ContactsResponse;
 import com.zglicz.contactsapi.service.ContactsService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -32,11 +27,7 @@ public class ContactsController {
         this.contactsService = contactsService;
     }
 
-    @Operation(summary = "Get a list of all contacts")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully loaded all contacts",
-                    content = { @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = ContactDTO.class))) })})
+    @Operation(summary = "Get a list of all contacts, supports pagination")
     @GetMapping(value = "/")
     public ResponseEntity<ContactsResponse> getContacts(
             @RequestParam(value = "page", defaultValue = DEFAULT_PAGE_NO, required = false) int pageNo,
